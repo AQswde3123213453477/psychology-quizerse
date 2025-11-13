@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تست روانشناسی</title>
+<style>
+  body {
+    font-family: Vazirmatn, sans-serif;
+    background: linear-gradient(180deg, #0f1724 0%, #1e293b 100%);
+    color: #e6eef6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    background: #0b1220;
+    padding: 24px;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  h1 { text-align: center; margin-bottom: 16px; }
+  .question-card {
+    background: #071028;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .options button {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #6ee7b7;
+    color: #072029;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .options button:hover {
+    background: #34d399;
+  }
+  #result {
+    text-align: center;
+    background: rgba(255,255,255,0.02);
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 16px;
+  }
+  footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #9aa4b2;
+  }
+  #musicControl {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <span id="musicControl">🔊</span>
+  <audio id="backgroundMusic" loop>
+    <source src="https://www.bensound.com/bensound-music/bensound-sunny.mp3" type="audio/mpeg">
+  </audio>
+  <h1>تست روانشناسی کوتاه</h1>
+  <div id="quiz"></div>
+  <div id="result"></div>
+  <footer>سازنده: عرفان صدیق</footer>
+</div>
+
+<script>
+const music = document.getElementById('backgroundMusic');
+const musicControl = document.getElementById('musicControl');
+let isPlaying = false;
+
+musicControl.addEventListener('click', ()=>{
+  if(isPlaying){
+    music.pause();
+    musicControl.textContent = '🔇';
+  }else{
+    music.play();
+    musicControl.textContent = '🔊';
+  }
+  isPlaying = !isPlaying;
+});
+
+const questions = [
+  {q: 'وقتی با مشکلی روبه‌رو می‌شوید، بیشتر چه کار می‌کنید؟', options:['سریع تصمیم می‌گیرم','احتیاط می‌کنم','منتظر می‌مانم'], type:'multi'},
+  {q: 'آیا ترجیح می‌دهید برنامه روزانه داشته باشید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'در جمع دوستان، معمولاً شما:', options:['فعال و برون‌گرا','کم حرف و درون‌گرا','تعادل دارم'], type:'multi'},
+  {q: 'آیا برای کارهای مهم خود همیشه برنامه‌ریزی می‌کنید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'وقتی استرس دارید، معمولا:', options:['فعال می‌شوم','کم‌تحرک می‌شوم','با دوستان مشورت می‌کنم'], type:'multi'},
+  {q: 'آیا دوست دارید همیشه کنترل اوضاع را داشته باشید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'هنگام تصمیم‌گیری، به احساس یا منطق بیشتر اعتماد می‌کنید؟', options:['احساس','منطق','ترکیب'], type:'multi'},
+  {q: 'آیا دوست دارید کارهای گروهی انجام دهید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'در تعطیلات، ترجیح می‌دهید:', options:['فعال باشید و بیرون بروید','در خانه استراحت کنید','ترکیبی'], type:'multi'},
+  {q: 'آیا در برخورد با دیگران صبور هستید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'وقتی با یک ایده جدید مواجه می‌شوید، بیشتر:', options:['به سرعت امتحان می‌کنم','ابتدا بررسی می‌کنم','بی‌تفاوت می‌مانم'], type:'multi'},
+  {q: 'آیا راحت با افراد جدید ارتباط برقرار می‌کنید؟', options:['صحیح','غلط'], type:'tf'}
+];
+
+let currentQuestion = 0;
+let answers = [];
+
+const quizDiv = document.getElementById('quiz');
+const resultDiv = document.getElementById('result');
+
+function showQuestion(){
+  if(currentQuestion >= questions.length){
+    showResult();
+    return;
+  }
+  const q = questions[currentQuestion];
+  quizDiv.innerHTML = `
+    <div class='question-card'>
+      <p>${currentQuestion+1}. ${q.q}</p>
+      <div class='options'>${q.options.map(opt=>`<button onclick='selectAnswer("${opt}")'>${opt}</button>`).join('')}</div>
+    </div>
+  `;
+}
+
+function selectAnswer(answer){
+  answers.push(answer);
+  currentQuestion++;
+  showQuestion();
+}
+
+function showResult(){
+  quizDiv.innerHTML = '';
+  let extrovert = answers.filter(a=>['فعال و برون‌گرا','صحیح','فعال باشید و بیرون بروید','به سرعت امتحان می‌کنم','راحت با افراد جدید ارتباط برقرار می‌کنید'].includes(a)).length;
+  let introvert = answers.filter(a=>['کم حرف و درون‌گرا','غلط','در خانه استراحت کنید','ابتدا بررسی می‌کنم','بی‌تفاوت می‌مانم'].includes(a)).length;
+  let balanced = answers.filter(a=>['تعادل دارم','ترکیبی','ترکیب'].includes(a)).length;
+
+  let personality = '';
+  if(extrovert > introvert && extrovert > balanced) personality = 'شخصیت برون‌گرا و فعال';
+  else if(introvert > extrovert && introvert > balanced) personality = 'شخصیت درون‌گرا و آرام';
+  else personality = 'شخصیت متعادل و انعطاف‌پذیر';
+
+  resultDiv.innerHTML = `
+    <h2>نتیجه تست شما:</h2>
+    <p>شخصیت شما: <strong>${personality}</strong></p>
+    <p>پیشنهاد: نقاط قوت خود را تقویت کنید و به نیازهای خود احترام بگذارید.</p>
+  `;
+}
+
+showQuestion();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تست روانشناسی</title>
+<style>
+  body {
+    font-family: Vazirmatn, sans-serif;
+    background: linear-gradient(180deg, #0f1724 0%, #1e293b 100%);
+    color: #e6eef6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    background: #0b1220;
+    padding: 24px;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  h1 { text-align: center; margin-bottom: 16px; }
+  .question-card {
+    background: #071028;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .options button {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #6ee7b7;
+    color: #072029;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .options button:hover {
+    background: #34d399;
+  }
+  #result {
+    text-align: center;
+    background: rgba(255,255,255,0.02);
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 16px;
+  }
+  footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #9aa4b2;
+  }
+  #musicControl {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 24px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <span id="musicControl">🔊</span>
+  <audio id="backgroundMusic" loop>
+    <source src="https://www.bensound.com/bensound-music/bensound-sunny.mp3" type="audio/mpeg">
+  </audio>
+  <h1>تست روانشناسی کوتاه</h1>
+  <div id="quiz"></div>
+  <div id="result"></div>
+  <footer>سازنده: عرفان صدیق</footer>
+</div>
+
+<script>
+const music = document.getElementById('backgroundMusic');
+const musicControl = document.getElementById('musicControl');
+let isPlaying = false;
+
+musicControl.addEventListener('click', ()=>{
+  if(isPlaying){
+    music.pause();
+    musicControl.textContent = '🔇';
+  }else{
+    music.play();
+    musicControl.textContent = '🔊';
+  }
+  isPlaying = !isPlaying;
+});
+
+const questions = [
+  {q: 'وقتی با مشکلی روبه‌رو می‌شوید، بیشتر چه کار می‌کنید؟', options:['سریع تصمیم می‌گیرم','احتیاط می‌کنم','منتظر می‌مانم'], type:'multi'},
+  {q: 'آیا ترجیح می‌دهید برنامه روزانه داشته باشید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'در جمع دوستان، معمولاً شما:', options:['فعال و برون‌گرا','کم حرف و درون‌گرا','تعادل دارم'], type:'multi'},
+  {q: 'آیا برای کارهای مهم خود همیشه برنامه‌ریزی می‌کنید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'وقتی استرس دارید، معمولا:', options:['فعال می‌شوم','کم‌تحرک می‌شوم','با دوستان مشورت می‌کنم'], type:'multi'},
+  {q: 'آیا دوست دارید همیشه کنترل اوضاع را داشته باشید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'هنگام تصمیم‌گیری، به احساس یا منطق بیشتر اعتماد می‌کنید؟', options:['احساس','منطق','ترکیب'], type:'multi'},
+  {q: 'آیا دوست دارید کارهای گروهی انجام دهید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'در تعطیلات، ترجیح می‌دهید:', options:['فعال باشید و بیرون بروید','در خانه استراحت کنید','ترکیبی'], type:'multi'},
+  {q: 'آیا در برخورد با دیگران صبور هستید؟', options:['صحیح','غلط'], type:'tf'},
+  {q: 'وقتی با یک ایده جدید مواجه می‌شوید، بیشتر:', options:['به سرعت امتحان می‌کنم','ابتدا بررسی می‌کنم','بی‌تفاوت می‌مانم'], type:'multi'},
+  {q: 'آیا راحت با افراد جدید ارتباط برقرار می‌کنید؟', options:['صحیح','غلط'], type:'tf'}
+];
+
+let currentQuestion = 0;
+let answers = [];
+
+const quizDiv = document.getElementById('quiz');
+const resultDiv = document.getElementById('result');
+
+function showQuestion(){
+  if(currentQuestion >= questions.length){
+    showResult();
+    return;
+  }
+  const q = questions[currentQuestion];
+  quizDiv.innerHTML = `
+    <div class='question-card'>
+      <p>${currentQuestion+1}. ${q.q}</p>
+      <div class='options'>${q.options.map(opt=>`<button onclick='selectAnswer("${opt}")'>${opt}</button>`).join('')}</div>
+    </div>
+  `;
+}
+
+function selectAnswer(answer){
+  answers.push(answer);
+  currentQuestion++;
+  showQuestion();
+}
+
+function showResult(){
+  quizDiv.innerHTML = '';
+  let extrovert = answers.filter(a=>['فعال و برون‌گرا','صحیح','فعال باشید و بیرون بروید','به سرعت امتحان می‌کنم','راحت با افراد جدید ارتباط برقرار می‌کنید'].includes(a)).length;
+  let introvert = answers.filter(a=>['کم حرف و درون‌گرا','غلط','در خانه استراحت کنید','ابتدا بررسی می‌کنم','بی‌تفاوت می‌مانم'].includes(a)).length;
+  let balanced = answers.filter(a=>['تعادل دارم','ترکیبی','ترکیب'].includes(a)).length;
+
+  let personality = '';
+  if(extrovert > introvert && extrovert > balanced) personality = 'شخصیت برون‌گرا و فعال';
+  else if(introvert > extrovert && introvert > balanced) personality = 'شخصیت درون‌گرا و آرام';
+  else personality = 'شخصیت متعادل و انعطاف‌پذیر';
+
+  resultDiv.innerHTML = `
+    <h2>نتیجه تست شما:</h2>
+    <p>شخصیت شما: <strong>${personality}</strong></p>
+    <p>پیشنهاد: نقاط قوت خود را تقویت کنید و به نیازهای خود احترام بگذارید.</p>
+  `;
+}
+
+showQuestion();
+</script>
+</body>
+</html>
